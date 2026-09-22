@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { canChangeSettings } from "@/lib/permissions";
-import { REPORT_STYLES } from "../route";
+import { REPORT_STYLES } from "@/lib/report-styles";
 
 const schema = z.object({
   name: z.string().min(1).optional(),
