@@ -1,0 +1,662 @@
+// ============================================================================
+// LADYBIRD WHOLE-SCHOOL SYSTEM — Prisma schema
+// Migrated from the original single Firestore document (`records/core`) into
+// a normalized relational model. Every concept present in the original
+// Firestore state object has a home here; nothing was dropped.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------------------------------------------------------
+// ENUMS
+// ----------------------------------------------------------------------------
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  PRINCIPAL
+  ACADEMIC_SUPERVISOR
+  TEACHER
+}
+
+enum StudentStatus {
+  Active
+  Inactive
+  Graduated
+  Withdrawn
+  Transferred
+}
+
+// Per subject/class/session/term result status (was `classSubjectStatus`).
+// UNASSIGNED and DRAFT are computed/virtual in the original app (no teacher
+// assignment yet / not yet touched) and are never written to storage here —
+// PENDING covers "assigned but not yet submitted". LOCKED exists in the
+// original's status-label map and lock checks but no code path in the
+// source ZIP ever sets it at the subject level — kept for parity/future use.
+enum ResultStatus {
+  PENDING
+  SUBMITTED
+  RETURNED
+  APPROVED
+  ADMIN_REVIEW
+  PUBLISHED
+  LOCKED
+}
+
+// Per class/session/term overall approval status (was `classApproval.status`).
+enum ClassApprovalStatus {
+  IN_PROGRESS
+  FORM_APPROVED
+  PUBLISHED
+  LOCKED
+}
+
+enum AttendanceState {
+  ABSENT
+  EXCUSED
+}
+
+enum CommentCategory {
+  positive
+  neutral
+  improvement
+}
+
+enum SkillDomainType {
+  AFFECTIVE
+  PSYCHOMOTOR
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+  BOOLEAN
+}
+
+enum AssessmentScope {
+  SECTION
+  CLASS_ARM
+  SCHOOL
+}
+
+// ----------------------------------------------------------------------------
+// SCHOOL / SESSION / STRUCTURE
+// ----------------------------------------------------------------------------
+
+// Singleton row holding school branding + "current session/term" pointers.
+// (If this is ever used for more than one school, add a School.id FK to
+// every model below and scope queries by it — kept singleton for now to
+// match the original single-school app.)
+model SchoolSetting {
+  id                String   @id @default(cuid())
+  name              String   @default("")
+  address           String   @default("")
+  phone             String   @default("")
+  email             String   @default("")
+  website           String   @default("")
+  motto             String   @default("")
+  logoUrl           String?
+  stampUrl          String?
+  currentSessionId  String?
+  currentTermId     String?
+  rankingBasis      String   @default("average") // average | aggregate
+  rankingScope      String   @default("classArm")
+  rankingTieMethod  String   @default("competition")
+  requireCompleteResults Boolean @default(true)
+  ratingLevels      String[] @default(["Excellent","Very Good","Good","Fair","Poor"])
+  updatedAt         DateTime @updatedAt
+}
+
+model AcademicSession {
+  id           String        @id @default(cuid())
+  name         String        @unique // e.g. "2026/2027"
+  active       Boolean       @default(true)
+  terms        Term[]
+  createdAt    DateTime      @default(now())
+
+  teacherAssignments     TeacherAssignment[]
+  formTeacherAssignments FormTeacherAssignment[]
+  enrollments            StudentEnrollment[]
+  scores                 Score[]
+  resultStatuses         SubjectResultStatus[]
+  classApprovals         ClassApproval[]
+  studentComments        StudentComment[]
+  domainScores           DomainScore[]
+  attendanceRecords      Attendance[]
+}
+
+model Term {
+  id                  String          @id @default(cuid())
+  sessionId           String
+  session             AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  name                String
+  order               Int
+  nextTermStartDate   String?
+
+  teacherAssignments     TeacherAssignment[]
+  scores                 Score[]
+  resultStatuses         SubjectResultStatus[]
+  classApprovals         ClassApproval[]
+  studentComments        StudentComment[]
+  domainScores           DomainScore[]
+  attendanceRecords      Attendance[]
+
+  @@unique([sessionId, order])
+}
+
+model Section {
+  id          String       @id @default(cuid())
+  name        String
+  order       Int
+  departments Department[]
+  classArms   ClassArm[]
+  students    Student[]
+  enrollments StudentEnrollment[]
+  commentTemplates CommentTemplate[]
+
+  subjectLinks         SubjectSection[]
+  assessmentSchemeLinks AssessmentSchemeSection[]
+  gradingSchemeLinks    GradingSchemeSection[]
+  reportTemplateLinks   ReportTemplateSection[]
+  customFieldLinks      CustomFieldSection[]
+}
+
+model Department {
+  id        String    @id @default(cuid())
+  sectionId String
+  section   Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  name      String
+  active    Boolean   @default(true)
+  classArms ClassArm[]
+  students  Student[]
+  enrollments StudentEnrollment[]
+
+  subjectLinks SubjectDepartment[]
+}
+
+model ClassArm {
+  id           String      @id @default(cuid())
+  sectionId    String
+  section      Section     @relation(fields: [sectionId], references: [id])
+  name         String
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  active       Boolean     @default(true)
+
+  students               Student[]
+  enrollments            StudentEnrollment[]
+  teacherAssignments     TeacherAssignment[]
+  formTeacherAssignments FormTeacherAssignment[]
+  scores                 Score[]
+  resultStatuses         SubjectResultStatus[]
+  classApprovals         ClassApproval[]
+}
+
+// ----------------------------------------------------------------------------
+// USERS / STAFF
+// ----------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  photoUrl     String?
+  signatureUrl String?
+  active       Boolean  @default(true)
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  teacherAssignments     TeacherAssignment[]
+  formTeacherAssignments FormTeacherAssignment[]
+  signatures             Signature[]
+  auditLogs              AuditLog[]
+  publishedApprovals     ClassApproval[] @relation("publishedBy")
+  reviewedApprovals      ClassApproval[] @relation("reviewedBy")
+  approvedApprovals      ClassApproval[] @relation("approvedBy")
+  reopenedApprovals      ClassApproval[] @relation("reopenedBy")
+
+  @@index([role])
+}
+
+model TeacherAssignment {
+  id         String          @id @default(cuid())
+  teacherId  String
+  teacher    User            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjectId  String
+  subject    Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  classArmId String
+  classArm   ClassArm        @relation(fields: [classArmId], references: [id], onDelete: Cascade)
+  sessionId  String
+  session    AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  termId     String
+  term       Term            @relation(fields: [termId], references: [id], onDelete: Cascade)
+  active     Boolean         @default(true)
+
+  @@unique([teacherId, subjectId, classArmId, sessionId, termId])
+  @@index([subjectId, classArmId, sessionId, termId])
+}
+
+model FormTeacherAssignment {
+  id         String          @id @default(cuid())
+  teacherId  String
+  teacher    User            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classArmId String
+  classArm   ClassArm        @relation(fields: [classArmId], references: [id], onDelete: Cascade)
+  sessionId  String
+  session    AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  active     Boolean         @default(true)
+
+  @@unique([teacherId, classArmId, sessionId])
+  @@index([classArmId, sessionId])
+}
+
+// ----------------------------------------------------------------------------
+// STUDENTS
+// ----------------------------------------------------------------------------
+
+model Student {
+  id             String        @id @default(cuid())
+  admissionNo    String        @unique
+  name           String
+  gender         String
+  dob            String?
+  photoUrl       String?
+  sectionId      String
+  section        Section       @relation(fields: [sectionId], references: [id])
+  classArmId     String
+  classArm       ClassArm      @relation(fields: [classArmId], references: [id])
+  departmentId   String?
+  department     Department?   @relation(fields: [departmentId], references: [id])
+  status         StudentStatus @default(Active)
+  guardianPhone  String?
+  address        String?
+  customFields   Json          @default("{}")
+  isDemo         Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+
+  enrollments      StudentEnrollment[]
+  subjectSelections StudentSubject[]
+  scores           Score[]
+  comments         StudentComment[]
+  domainScores     DomainScore[]
+  attendanceRecords Attendance[]
+
+  @@index([classArmId])
+  @@index([sectionId])
+}
+
+// Never overwritten — one row per class/session move, so historical results
+// always resolve against the class-arm the student was actually in at the time.
+model StudentEnrollment {
+  id           String          @id @default(cuid())
+  studentId    String
+  student      Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sessionId    String
+  session      AcademicSession @relation(fields: [sessionId], references: [id])
+  classArmId   String
+  classArm     ClassArm        @relation(fields: [classArmId], references: [id])
+  sectionId    String
+  section      Section         @relation(fields: [sectionId], references: [id])
+  departmentId String?
+  department   Department?     @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime        @default(now())
+
+  @@index([studentId, sessionId])
+}
+
+// Per-student subject picks that go beyond the department default
+// (e.g. a Science student who also takes Government).
+model StudentSubject {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subjectId])
+}
+
+// ----------------------------------------------------------------------------
+// SUBJECTS
+// ----------------------------------------------------------------------------
+
+model Subject {
+  id                String   @id @default(cuid())
+  name              String
+  code              String
+  core              Boolean  @default(false)
+  includeInAverage  Boolean  @default(true)
+  includeInRanking  Boolean  @default(true)
+  passMark          Int      @default(40)
+  order             Int      @default(1)
+  active            Boolean  @default(true)
+
+  sectionLinks      SubjectSection[]
+  departmentLinks   SubjectDepartment[]
+  teacherAssignments TeacherAssignment[]
+  studentSelections StudentSubject[]
+  scores            Score[]
+  resultStatuses    SubjectResultStatus[]
+
+  @@unique([code])
+}
+
+model SubjectSection {
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  sectionId String
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([subjectId, sectionId])
+}
+
+model SubjectDepartment {
+  subjectId    String
+  subject      Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([subjectId, departmentId])
+}
+
+// ----------------------------------------------------------------------------
+// ASSESSMENT + GRADING (configurable, per-section)
+// ----------------------------------------------------------------------------
+
+model AssessmentScheme {
+  id         String              @id @default(cuid())
+  name       String
+  scope      AssessmentScope     @default(SECTION)
+  sections   AssessmentSchemeSection[]
+  components AssessmentComponent[]
+}
+
+model AssessmentSchemeSection {
+  schemeId  String
+  scheme    AssessmentScheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  sectionId String
+  section   Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([schemeId, sectionId])
+}
+
+model AssessmentComponent {
+  id       String           @id @default(cuid())
+  schemeId String
+  scheme   AssessmentScheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  name     String
+  maxScore Int
+  weight   Int
+  order    Int
+  active   Boolean          @default(true)
+}
+
+model GradingScheme {
+  id       String                  @id @default(cuid())
+  name     String
+  scope    AssessmentScope         @default(SECTION)
+  sections GradingSchemeSection[]
+  bands    GradingBand[]
+}
+
+model GradingSchemeSection {
+  schemeId  String
+  scheme    GradingScheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  sectionId String
+  section   Section       @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([schemeId, sectionId])
+}
+
+model GradingBand {
+  id       String        @id @default(cuid())
+  schemeId String
+  scheme   GradingScheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  grade    String
+  min      Int
+  max      Int
+  point    Int
+  remark   String
+}
+
+// ----------------------------------------------------------------------------
+// SCORES + RESULT WORKFLOW
+// ----------------------------------------------------------------------------
+
+// One row per student/subject/class/session/term. `components` holds
+// { [assessmentComponentId]: number | null } — a null/missing key means
+// "blank", which is NEVER treated as zero. `attendanceState` overrides the
+// whole row to ABSENT/EXCUSED (distinct from a zero score).
+model Score {
+  id              String            @id @default(cuid())
+  studentId       String
+  student         Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId       String
+  subject         Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  classArmId      String
+  classArm        ClassArm          @relation(fields: [classArmId], references: [id], onDelete: Cascade)
+  sessionId       String
+  session         AcademicSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  termId          String
+  term            Term              @relation(fields: [termId], references: [id], onDelete: Cascade)
+  components      Json              @default("{}")
+  attendanceState AttendanceState?
+  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime          @default(now())
+
+  @@unique([studentId, subjectId, classArmId, sessionId, termId])
+  @@index([classArmId, subjectId, sessionId, termId])
+}
+
+// One row per class-arm/subject/session/term (was `classSubjectStatus` map).
+model SubjectResultStatus {
+  id         String          @id @default(cuid())
+  classArmId String
+  classArm   ClassArm        @relation(fields: [classArmId], references: [id], onDelete: Cascade)
+  subjectId  String
+  subject    Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  sessionId  String
+  session    AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  termId     String
+  term       Term            @relation(fields: [termId], references: [id], onDelete: Cascade)
+  status     ResultStatus    @default(PENDING)
+  updatedAt  DateTime        @updatedAt
+
+  @@unique([classArmId, subjectId, sessionId, termId])
+}
+
+// One row per class-arm/session/term (was `classApproval` map).
+model ClassApproval {
+  id             String              @id @default(cuid())
+  classArmId     String
+  classArm       ClassArm            @relation(fields: [classArmId], references: [id], onDelete: Cascade)
+  sessionId      String
+  session        AcademicSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  termId         String
+  term           Term                @relation(fields: [termId], references: [id], onDelete: Cascade)
+  status         ClassApprovalStatus @default(IN_PROGRESS)
+  reviewedById   String?
+  reviewedBy     User?               @relation("reviewedBy", fields: [reviewedById], references: [id])
+  approvedById   String?
+  approvedBy     User?               @relation("approvedBy", fields: [approvedById], references: [id])
+  publishedById  String?
+  publishedBy    User?               @relation("publishedBy", fields: [publishedById], references: [id])
+  publishedAt    DateTime?
+  reopenedById   String?
+  reopenedBy     User?               @relation("reopenedBy", fields: [reopenedById], references: [id])
+  reopenedAt     DateTime?
+  reopenReason   String?
+  previousStatus ClassApprovalStatus?
+
+  @@unique([classArmId, sessionId, termId])
+}
+
+// ----------------------------------------------------------------------------
+// COMMENTS / SIGNATURES / SKILLS / ATTENDANCE
+// ----------------------------------------------------------------------------
+
+model StudentComment {
+  id                 String          @id @default(cuid())
+  studentId          String
+  student            Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sessionId          String
+  session            AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  termId             String
+  term               Term            @relation(fields: [termId], references: [id], onDelete: Cascade)
+  formTeacherComment String?
+  principalComment   String?
+  nextFees           String?
+  examFee            String?
+
+  @@unique([studentId, sessionId, termId])
+}
+
+model CommentTemplate {
+  id        String          @id @default(cuid())
+  text      String
+  category  CommentCategory
+  sectionId String?
+  section   Section?        @relation(fields: [sectionId], references: [id])
+  active    Boolean         @default(true)
+}
+
+model Signature {
+  id       String  @id @default(cuid())
+  role     Role
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id])
+  name     String
+  imageUrl String?
+  active   Boolean @default(true)
+}
+
+model SkillDomain {
+  id     String          @id @default(cuid())
+  type   SkillDomainType
+  name   String
+  active Boolean         @default(true)
+
+  scores DomainScore[]
+}
+
+model DomainScore {
+  id        String          @id @default(cuid())
+  studentId String
+  student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sessionId String
+  session   AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  termId    String
+  term      Term            @relation(fields: [termId], references: [id], onDelete: Cascade)
+  domainId  String
+  domain    SkillDomain     @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  rating    String // one of SchoolSetting.ratingLevels, e.g. "Excellent"
+
+  @@unique([studentId, sessionId, termId, domainId])
+}
+
+model Attendance {
+  id         String          @id @default(cuid())
+  studentId  String
+  student    Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sessionId  String
+  session    AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  termId     String
+  term       Term            @relation(fields: [termId], references: [id], onDelete: Cascade)
+  totalDays  Int             @default(0)
+  present    Int             @default(0)
+  absent     Int             @default(0)
+  late       Int             @default(0)
+
+  @@unique([studentId, sessionId, termId])
+}
+
+// ----------------------------------------------------------------------------
+// REPORT TEMPLATES + CUSTOM FIELDS
+// ----------------------------------------------------------------------------
+
+model ReportTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  style          String // classic-navy | modern-teal | royal-purple | crimson-gold |
+                          // corporate-slate | elegant-serif | sunburst-orange |
+                          // forest-green | minimal-mono | double-frame-formal
+  showPhoto      Boolean  @default(true)
+  showAttendance Boolean  @default(true)
+  showAffective  Boolean  @default(true)
+  showFees       Boolean  @default(true)
+  isDefault      Boolean  @default(false)
+  active         Boolean  @default(true)
+
+  sections ReportTemplateSection[]
+}
+
+model ReportTemplateSection {
+  templateId String
+  template   ReportTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  sectionId  String
+  section    Section        @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, sectionId])
+}
+
+model CustomFieldDef {
+  id       String          @id @default(cuid())
+  name     String
+  type     CustomFieldType
+  required Boolean         @default(false)
+  order    Int             @default(1)
+  active   Boolean         @default(true)
+
+  sections CustomFieldSection[]
+}
+
+model CustomFieldSection {
+  fieldId   String
+  field     CustomFieldDef @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  sectionId String
+  section   Section        @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([fieldId, sectionId])
+}
+
+// ----------------------------------------------------------------------------
+// MEDIA / AUDIT
+// ----------------------------------------------------------------------------
+
+// Object-storage references (Vercel Blob / S3 / Cloudinary — pick one at
+// deploy time). The DB never holds image binary data, only the URL.
+model Media {
+  id          String   @id @default(cuid())
+  url         String
+  kind        String // "student-photo" | "school-logo" | "school-stamp" | "signature"
+  referenceId String? // e.g. studentId, userId — whatever the kind points at
+  createdAt   DateTime @default(now())
+
+  @@index([kind, referenceId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userName  String
+  role      String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
