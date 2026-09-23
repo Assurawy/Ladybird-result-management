@@ -4,31 +4,20 @@
 // its checks were UI-only and could be bypassed from devtools; every one of
 // these is now re-run inside API routes / Server Actions against data
 // fetched from the database, not against anything the client sent).
+//
+// This file is server-only (it touches Prisma) — the pure, no-DB role
+// checks (isWholeSchoolRole, canPublish, etc.) live in lib/roles.ts instead,
+// specifically so Client Components can import those without pulling this
+// whole file — and "server-only" — into the client bundle. Re-exported
+// below so existing server-side imports of these from "./permissions"
+// keep working unchanged.
 // ============================================================================
 import "server-only";
 import { prisma } from "./prisma";
 import { ForbiddenError, type SessionUser } from "./auth";
-import type { Role } from "@prisma/client";
 
-export function isWholeSchoolRole(role: Role) {
-  return role === "SUPER_ADMIN" || role === "ADMIN" || role === "PRINCIPAL" || role === "ACADEMIC_SUPERVISOR";
-}
-
-export function canManageUsers(role: Role) {
-  return role === "SUPER_ADMIN" || role === "ADMIN";
-}
-
-export function canPublish(role: Role) {
-  return role === "SUPER_ADMIN" || role === "ADMIN" || role === "PRINCIPAL";
-}
-
-export function canReopen(role: Role) {
-  return role === "SUPER_ADMIN" || role === "ADMIN";
-}
-
-export function canChangeSettings(role: Role) {
-  return role === "SUPER_ADMIN" || role === "ADMIN";
-}
+export { isWholeSchoolRole, canManageUsers, canPublish, canReopen, canChangeSettings } from "./roles";
+import { isWholeSchoolRole } from "./roles";
 
 // A subject teacher may only enter scores for a subject/class/session/term
 // they are actually assigned to. Whole-school roles (Admin/Principal/

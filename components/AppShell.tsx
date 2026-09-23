@@ -16,7 +16,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import type { SessionUser } from "@/lib/auth";
-import { isWholeSchoolRole } from "@/lib/permissions";
+import { isWholeSchoolRole } from "@/lib/roles";
 import LogoutButton from "./LogoutButton";
 
 // `primary: true` items get a slot in the mobile bottom nav (keep this to
