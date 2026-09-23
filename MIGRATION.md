@@ -88,7 +88,45 @@ match the original exactly: subject teachers can keep editing/resubmitting
 right up until a class is **Published/Locked** — submission and even Form
 Teacher return/approve are not one-way doors before that point.
 
-**Phase 3 (this pass) added:**
+**Phase 4 (visual pass): the app now matches the actual target design**,
+not a generic Tailwind admin theme. Two things drove this:
+
+1. The app-shell CSS (`app/globals.css`) is a direct port of the original
+   `styles.css`'s design tokens/classes — same navy/teal/gold palette, same
+   `.card`/`.data-table`/`.status-badge`/`.btn-*`/`.field-*` class names, so
+   new pages can reuse them instead of inventing ad hoc Tailwind each time.
+2. Once a working reference build (Netlify) was shared, the shell and a few
+   pages were brought in line with it specifically:
+   - **Nav**: fixed sidebar on desktop; on mobile, an evenly-spaced 5-icon
+     bottom bar (Dashboard/Students/Score Entry/Class Review/Report Cards or
+     Settings depending on role) plus a "More" bottom-sheet for
+     Teachers/Approvals/Audit — not a cramped 9-icon scroll strip.
+   - **Login**: branded from real `SchoolSetting` data (name/motto/logo) via
+     a new public `/api/school/public` endpoint, a show/hide password
+     toggle, and a "tap an account to autofill (password: demo123)" panel
+     backed by a new public `/api/auth/demo-accounts` endpoint — lists only
+     `isDemo: true` accounts, so it disappears on its own once you run
+     Settings → Backup → Remove Demo Accounts.
+   - **Dashboard** (whole-school roles): now shows Classes/Pending
+     Subjects/Submitted/Approved/Published counts (`lib/dashboard.ts`,
+     `getDashboardSummary()`) and a per-class "Class Result Completion"
+     table, not just two stat cards.
+   - **Students**: added the Section/Class/Status filter row + search (client-
+     side over the loaded list — fine at this scale, revisit with server-
+     side pagination if a school's roll grows into the thousands), a
+     `/students/[id]` detail/edit page with enrollment history, and an
+     "Import / Bulk Add" button — currently a stub alert, real bulk-import
+     is still open (see below).
+
+Known remaining visual gaps: `components/ReportCard.tsx`'s 10 themes are
+still their own inline-styled system rather than using the ported
+`.card`/`.data-table` classes (report cards are a print document with their
+own layout needs, so this was a deliberate scope cut, not an oversight) —
+revisit if you want the exact original `.rc-theme-*` look. The Settings
+page's `MultiSelect` control also hasn't been restyled to the ported
+classes yet (functional, just still plain).
+
+
 
 - **Full settings suite** (`/settings`): school branding + current
   session/term + ranking tie-method, structure (sections/departments/class
@@ -150,6 +188,10 @@ Teacher return/approve are not one-way doors before that point.
    Tailwind-based layout, not a pixel-for-pixel port of the original's
    `.rc-theme-*` CSS. Adjust `THEMES` / the component's JSX directly if you
    want a closer visual match to a specific one.
+6. **Bulk student import**: the Students page has an "Import / Bulk Add"
+   button matching the reference UI, but it's currently a stub (shows an
+   alert) — real CSV/paste-in bulk creation isn't built yet. Would reuse
+   the same validated create path as `POST /api/students`, just looped.
 
 None of the above requires touching the Prisma schema or the auth/permission
 layer — build directly on what's here.

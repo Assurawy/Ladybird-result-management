@@ -55,23 +55,23 @@ export default function StudentRecordClient({
 
   return (
     <div>
-      <Link href={`/form-review?classArmId=${classArmId}`} className="mb-4 inline-block text-sm text-navy underline">
+      <Link href={`/form-review?classArmId=${classArmId}`} className="small" style={{ color: "var(--teal-soft)", display: "inline-block", marginBottom: 12 }}>
         ← Back to Class Review
       </Link>
-      <h1 className="mb-4 text-2xl font-bold">{student.name} — Term Record</h1>
+      <h1 style={{ marginBottom: 16 }}>{student.name} — Term Record</h1>
 
-      <div className="mb-4 rounded-lg border bg-white p-4">
-        <h2 className="mb-2 font-semibold">Skills &amp; Behaviours</h2>
-        <table className="w-full text-sm">
+      <div className="card">
+        <h3 style={{ marginBottom: 10 }}>Skills &amp; Behaviours</h3>
+        <table className="data-table">
           <tbody>
             {domains.map((d) => (
-              <tr key={d.id} className="border-t">
-                <td className="w-1/2 p-2">
-                  {d.name} <span className="text-xs text-slate-400">({d.type === "AFFECTIVE" ? "Behaviour" : "Skill"})</span>
+              <tr key={d.id}>
+                <td >
+                  {d.name} <span className="small muted">({d.type === "AFFECTIVE" ? "Behaviour" : "Skill"})</span>
                 </td>
-                <td className="p-2">
+                <td >
                   <select
-                    className="rounded border px-2 py-1"
+                    className="field-input field-input-sm"
                     value={ratingState[d.id] ?? ""}
                     onChange={(e) => setRatingState({ ...ratingState, [d.id]: e.target.value })}
                   >
@@ -89,16 +89,16 @@ export default function StudentRecordClient({
         </table>
       </div>
 
-      <div className="mb-4 rounded-lg border bg-white p-4">
-        <h2 className="mb-2 font-semibold">Attendance</h2>
+      <div className="card">
+        <h3 style={{ marginBottom: 10 }}>Attendance</h3>
         <div className="flex flex-wrap gap-3">
           {(["totalDays", "present", "absent", "late"] as const).map((k) => (
-            <label key={k} className="text-sm">
-              <span className="mb-1 block capitalize text-slate-500">{k}</span>
+            <label key={k} style={{ display: "block" }}>
+              <span className="field-label" style={{ textTransform: "capitalize" }}>{k}</span>
               <input
                 type="number"
                 min={0}
-                className="w-24 rounded border px-2 py-1"
+                className="field-input field-input-sm" style={{ width: 90 }}
                 value={att[k]}
                 onChange={(e) => setAtt({ ...att, [k]: Number(e.target.value) })}
               />
@@ -107,24 +107,24 @@ export default function StudentRecordClient({
         </div>
       </div>
 
-      <div className="mb-4 rounded-lg border bg-white p-4">
-        <h2 className="mb-2 font-semibold">Fees</h2>
+      <div className="card">
+        <h3 style={{ marginBottom: 10 }}>Fees</h3>
         <div className="flex flex-wrap gap-3">
-          <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Next Term Fee</span>
-            <input className="w-32 rounded border px-2 py-1" value={feeState.nextFees} onChange={(e) => setFeeState({ ...feeState, nextFees: e.target.value })} />
+          <label style={{ display: "block" }}>
+            <span className="field-label">Next Term Fee</span>
+            <input className="field-input field-input-sm" style={{ width: 120 }} value={feeState.nextFees} onChange={(e) => setFeeState({ ...feeState, nextFees: e.target.value })} />
           </label>
-          <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Exam Fee</span>
-            <input className="w-32 rounded border px-2 py-1" value={feeState.examFee} onChange={(e) => setFeeState({ ...feeState, examFee: e.target.value })} />
+          <label style={{ display: "block" }}>
+            <span className="field-label">Exam Fee</span>
+            <input className="field-input field-input-sm" style={{ width: 120 }} value={feeState.examFee} onChange={(e) => setFeeState({ ...feeState, examFee: e.target.value })} />
           </label>
         </div>
       </div>
 
-      <button onClick={saveAll} className="rounded bg-navy px-4 py-2 text-sm font-medium text-white">
+      <button onClick={saveAll} className="btn btn-primary">
         Save
       </button>
-      {saved && <span className="ml-3 text-sm text-emerald-600">Saved.</span>}
+      {saved && <span className="small" style={{ color: "var(--good)", marginLeft: 12 }}>Saved.</span>}
     </div>
   );
 }

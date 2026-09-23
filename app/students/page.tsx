@@ -18,7 +18,7 @@ export default async function StudentsPage() {
   return (
     <AppShell user={session}>
       <StudentsClient
-        students={students.map((s) => ({ id: s.id, admissionNo: s.admissionNo, name: s.name, className: s.classArm.name, sectionName: s.section.name, status: s.status, photoUrl: s.photoUrl }))}
+        students={students.map((s) => ({ id: s.id, admissionNo: s.admissionNo, name: s.name, className: s.classArm.name, classArmId: s.classArmId, sectionName: s.section.name, sectionId: s.sectionId, status: s.status, photoUrl: s.photoUrl }))}
         sections={sections.map((s) => ({ id: s.id, name: s.name }))}
         classArms={classArms.map((c) => ({ id: c.id, name: c.name, sectionId: c.sectionId, departmentId: c.departmentId }))}
         currentSessionId={school?.currentSessionId ?? ""}

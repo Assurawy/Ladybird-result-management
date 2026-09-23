@@ -39,9 +39,9 @@ export default function ReportsClient({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Report Cards</h1>
-        <select className="rounded-md border px-3 py-2 text-sm" defaultValue={classArmId} onChange={(e) => router.push(`/reports?classArmId=${e.target.value}`)}>
+      <div className="page-header-row">
+        <h1>Report Cards</h1>
+        <select className="field-input field-input-sm" style={{ width: "auto" }} defaultValue={classArmId} onChange={(e) => router.push(`/reports?classArmId=${e.target.value}`)}>
           {classes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -50,50 +50,45 @@ export default function ReportsClient({
         </select>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <label className="text-sm text-slate-500">Template:</label>
-        <select className="rounded-md border px-2 py-1 text-sm" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
+      <div className="filter-bar">
+        <label className="small muted">Template:</label>
+        <select className="field-input field-input-sm" style={{ width: "auto" }} value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
           {templates.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
             </option>
           ))}
         </select>
-        <a
-          href={printUrl([...selected])}
-          target="_blank"
-          rel="noreferrer"
-          className={`rounded border px-3 py-1 text-sm ${selected.size === 0 ? "pointer-events-none opacity-50" : ""}`}
-        >
+        <a href={printUrl([...selected])} target="_blank" rel="noreferrer" className={`btn btn-ghost btn-sm ${selected.size === 0 ? "pointer-events-none opacity-50" : ""}`}>
           Print Selected
         </a>
-        <a href={printUrl(students.map((s) => s.id))} target="_blank" rel="noreferrer" className="rounded bg-navy px-3 py-1 text-sm text-white">
+        <a href={printUrl(students.map((s) => s.id))} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
           Print Whole Class
         </a>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
             <tr>
-              <th className="p-3"></th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Admission No.</th>
-              <th className="p-3">Average</th>
-              <th className="p-3"></th>
+              <th></th>
+              <th>Name</th>
+              <th>Admission No.</th>
+              <th>Average</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {students.map((s) => (
-              <tr key={s.id} className="border-t">
-                <td className="p-3">
+              <tr key={s.id}>
+                <td>
                   <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} />
                 </td>
-                <td className="p-3">{s.name}</td>
-                <td className="p-3">{s.admissionNo}</td>
-                <td className="p-3">{s.average !== null ? `${s.average}%` : "—"}</td>
-                <td className="p-3">
-                  <a href={printUrl([s.id])} target="_blank" rel="noreferrer" className="rounded border px-2 py-1 text-xs">
+                <td>{s.name}</td>
+                <td>{s.admissionNo}</td>
+                <td>{s.average !== null ? `${s.average}%` : "—"}</td>
+                <td>
+                  <a href={printUrl([s.id])} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">
                     Preview
                   </a>
                 </td>

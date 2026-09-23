@@ -1,10 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-type Student = { id: string; admissionNo: string; name: string; className: string; sectionName: string; status: string; photoUrl: string | null };
+type Student = {
+  id: string;
+  admissionNo: string;
+  name: string;
+  className: string;
+  classArmId: string;
+  sectionName: string;
+  sectionId: string;
+  status: string;
+  photoUrl: string | null;
+};
 type ClassArm = { id: string; name: string; sectionId: string; departmentId: string | null };
+
+const STATUSES = ["Active", "Inactive", "Graduated", "Withdrawn", "Transferred"];
 
 export default function StudentsClient({
   students,
@@ -23,7 +36,24 @@ export default function StudentsClient({
   const [error, setError] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
+  const [filterSectionId, setFilterSectionId] = useState("");
+  const [filterClassArmId, setFilterClassArmId] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [search, setSearch] = useState("");
+
   const classArmOptions = classArms.filter((c) => c.sectionId === form.sectionId);
+  const filterClassOptions = classArms.filter((c) => !filterSectionId || c.sectionId === filterSectionId);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return students.filter((s) => {
+      if (filterSectionId && s.sectionId !== filterSectionId) return false;
+      if (filterClassArmId && s.classArmId !== filterClassArmId) return false;
+      if (filterStatus && s.status !== filterStatus) return false;
+      if (q && !s.name.toLowerCase().includes(q) && !s.admissionNo.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [students, filterSectionId, filterClassArmId, filterStatus, search]);
 
   async function addStudent() {
     setError(null);
@@ -58,46 +88,58 @@ export default function StudentsClient({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Students</h1>
-        <button onClick={() => setShowForm((s) => !s)} className="rounded bg-navy px-3 py-2 text-sm text-white">
-          {showForm ? "Cancel" : "+ Add Student"}
-        </button>
+      <div className="page-header-row">
+        <div>
+          <h1>Students</h1>
+          <p className="small muted">{filtered.length} of {students.length} shown</p>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => alert("Bulk import is planned but not built yet — add students one at a time above for now.")}
+          >
+            Import / Bulk Add
+          </button>
+          <button onClick={() => setShowForm((s) => !s)} className="btn btn-primary btn-sm">
+            {showForm ? "Cancel" : "+ Add Student"}
+          </button>
+        </div>
       </div>
 
-      {error && <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="login-error" style={{ marginBottom: 16 }}>{error}</div>}
 
       {showForm && (
-        <div className="mb-4 rounded-lg border bg-white p-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="text-sm">
-              <span className="mb-1 block text-slate-500">Admission No</span>
-              <input className="rounded border px-2 py-1" value={form.admissionNo} onChange={(e) => setForm({ ...form, admissionNo: e.target.value })} />
-            </label>
-            <label className="text-sm">
-              <span className="mb-1 block text-slate-500">Name</span>
-              <input className="rounded border px-2 py-1" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </label>
-            <label className="text-sm">
-              <span className="mb-1 block text-slate-500">Gender</span>
-              <select className="rounded border px-2 py-1" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
+        <div className="card">
+          <div className="form-grid-5">
+            <div>
+              <label className="field-label">Admission No</label>
+              <input className="field-input" value={form.admissionNo} onChange={(e) => setForm({ ...form, admissionNo: e.target.value })} />
+            </div>
+            <div>
+              <label className="field-label">Name</label>
+              <input className="field-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <label className="field-label">Gender</label>
+              <select className="field-input" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
                 <option>Male</option>
                 <option>Female</option>
               </select>
-            </label>
-            <label className="text-sm">
-              <span className="mb-1 block text-slate-500">Section</span>
-              <select className="rounded border px-2 py-1" value={form.sectionId} onChange={(e) => setForm({ ...form, sectionId: e.target.value, classArmId: "" })}>
+            </div>
+            <div>
+              <label className="field-label">Section</label>
+              <select className="field-input" value={form.sectionId} onChange={(e) => setForm({ ...form, sectionId: e.target.value, classArmId: "" })}>
                 {sections.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="text-sm">
-              <span className="mb-1 block text-slate-500">Class</span>
-              <select className="rounded border px-2 py-1" value={form.classArmId} onChange={(e) => setForm({ ...form, classArmId: e.target.value })}>
+            </div>
+            <div>
+              <label className="field-label">Class</label>
+              <select className="field-input" value={form.classArmId} onChange={(e) => setForm({ ...form, classArmId: e.target.value })}>
                 <option value="">—</option>
                 {classArmOptions.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -105,52 +147,98 @@ export default function StudentsClient({
                   </option>
                 ))}
               </select>
-            </label>
-            <button onClick={addStudent} className="rounded bg-navy px-3 py-2 text-sm text-white">
-              Save
-            </button>
+            </div>
           </div>
+          <button onClick={addStudent} className="btn btn-primary" style={{ marginTop: 14 }}>
+            Save Student
+          </button>
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <div className="filter-bar">
+        <select className="field-input field-input-sm" style={{ width: "auto" }} value={filterSectionId} onChange={(e) => { setFilterSectionId(e.target.value); setFilterClassArmId(""); }}>
+          <option value="">All Sections</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <select className="field-input field-input-sm" style={{ width: "auto" }} value={filterClassArmId} onChange={(e) => setFilterClassArmId(e.target.value)}>
+          <option value="">All Classes</option>
+          {filterClassOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select className="field-input field-input-sm" style={{ width: "auto" }} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="">All Statuses</option>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <input className="field-input field-input-sm" style={{ flex: 1, minWidth: 180 }} placeholder="Search name or admission no." value={search} onChange={(e) => setSearch(e.target.value)} />
+      </div>
+
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
             <tr>
-              <th className="p-3"></th>
-              <th className="p-3">Admission No</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Class</th>
-              <th className="p-3">Section</th>
-              <th className="p-3">Status</th>
+              <th></th>
+              <th>Admission No</th>
+              <th>Name</th>
+              <th>Class</th>
+              <th>Section</th>
+              <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {students.map((s) => (
-              <tr key={s.id} className="border-t">
-                <td className="p-2">
-                  <label className="cursor-pointer">
+            {filtered.map((s) => (
+              <tr key={s.id}>
+                <td>
+                  <label style={{ cursor: "pointer" }}>
                     {s.photoUrl ? (
-                      <img src={s.photoUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+                      <img src={s.photoUrl} alt="" className="avatar-photo" style={{ borderRadius: "50%" }} />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs">{s.name[0]}</div>
+                      <div className="avatar-fallback">{s.name[0]}</div>
                     )}
                     <input
                       type="file"
                       accept="image/*"
-                      className="hidden"
+                      style={{ display: "none" }}
                       disabled={uploadingId === s.id}
                       onChange={(e) => e.target.files?.[0] && uploadPhoto(s.id, e.target.files[0])}
                     />
                   </label>
                 </td>
-                <td className="p-3">{s.admissionNo}</td>
-                <td className="p-3">{s.name}</td>
-                <td className="p-3">{s.className}</td>
-                <td className="p-3">{s.sectionName}</td>
-                <td className="p-3">{s.status}</td>
+                <td>{s.admissionNo}</td>
+                <td style={{ fontWeight: 600 }}>{s.name}</td>
+                <td>{s.className}</td>
+                <td>{s.sectionName}</td>
+                <td>
+                  <span className={`status-badge status-${s.status.toLowerCase()}`}>{s.status}</span>
+                </td>
+                <td>
+                  <Link href={`/students/${s.id}`} className="btn btn-ghost btn-sm">
+                    View
+                  </Link>
+                </td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7}>
+                  <div className="empty-state">
+                    <h3>No students match</h3>
+                    <p>Try clearing a filter or search term.</p>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

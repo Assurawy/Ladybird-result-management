@@ -14,7 +14,7 @@ export default async function FormReviewPage({ searchParams }: { searchParams: {
   if (!school?.currentSessionId || !school?.currentTermId) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">No active session/term is set yet.</p>
+        <p className="muted">No active session/term is set yet.</p>
       </AppShell>
     );
   }
@@ -29,7 +29,7 @@ export default async function FormReviewPage({ searchParams }: { searchParams: {
   if (myClasses.length === 0) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">You are not currently assigned as a Form Teacher for any class.</p>
+        <p className="muted">You are not currently assigned as a Form Teacher for any class.</p>
       </AppShell>
     );
   }

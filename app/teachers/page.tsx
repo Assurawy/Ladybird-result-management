@@ -14,7 +14,7 @@ export default async function TeachersPage() {
   if (!school?.currentSessionId || !school?.currentTermId) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">Set a current session/term in Settings first.</p>
+        <p className="muted">Set a current session/term in Settings first.</p>
       </AppShell>
     );
   }

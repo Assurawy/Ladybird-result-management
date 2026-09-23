@@ -144,6 +144,7 @@ model Term {
   nextTermStartDate   String?
 
   teacherAssignments     TeacherAssignment[]
+  enrollments            StudentEnrollment[]
   scores                 Score[]
   resultStatuses         SubjectResultStatus[]
   classApprovals         ClassApproval[]

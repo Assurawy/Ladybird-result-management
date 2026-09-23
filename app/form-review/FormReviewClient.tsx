@@ -76,13 +76,9 @@ export default function FormReviewClient({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Class Review</h1>
-        <select
-          className="rounded-md border px-3 py-2 text-sm"
-          defaultValue={classArmId}
-          onChange={(e) => router.push(`/form-review?classArmId=${e.target.value}`)}
-        >
+      <div className="page-header-row">
+        <h1>Class Review</h1>
+        <select className="field-input field-input-sm" style={{ width: "auto" }} defaultValue={classArmId} onChange={(e) => router.push(`/form-review?classArmId=${e.target.value}`)}>
           {classes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -91,43 +87,44 @@ export default function FormReviewClient({
         </select>
       </div>
 
-      {error && <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="login-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-      <div className="mb-4 grid grid-cols-3 gap-4">
+      <div className="stat-grid stat-grid-compact">
         <StatCard label="Students" value={overview.students.length} />
         <StatCard label="Class Average" value={overview.classAverage !== null ? `${overview.classAverage}%` : "—"} />
-        <StatCard label="Class Status" value={approvalStatus.replace("_", " ")} />
+        <StatCard label="Class Status" value={approvalStatus.replace(/_/g, " ")} />
       </div>
 
-      <div className="mb-6 overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <h3 className="section-title">Subjects</h3>
+      <div className="table-wrap" style={{ marginBottom: 22 }}>
+        <table className="data-table">
+          <thead>
             <tr>
-              <th className="p-3">Subject</th>
-              <th className="p-3">Entered</th>
-              <th className="p-3">Status</th>
-              <th className="p-3"></th>
+              <th>Subject</th>
+              <th>Entered</th>
+              <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {overview.subjectStatuses.map((s) => {
               const canAct = s.status === "SUBMITTED";
               return (
-                <tr key={s.subjectId} className="border-t">
-                  <td className="p-3">{s.subjectName}</td>
-                  <td className="p-3">
+                <tr key={s.subjectId}>
+                  <td>{s.subjectName}</td>
+                  <td>
                     {s.entered} / {s.totalStudents}
                   </td>
-                  <td className="p-3">
-                    <span className="rounded-full bg-slate-200 px-2 py-1 text-xs">{s.status.replace("_", " ")}</span>
+                  <td>
+                    <span className={`status-badge status-${s.status.toLowerCase()}`}>{s.status.replace(/_/g, " ")}</span>
                   </td>
-                  <td className="p-3">
+                  <td>
                     {canAct && (
-                      <div className="flex gap-2">
-                        <button disabled={!!busy} onClick={() => act(s.subjectId, "RETURN")} className="rounded border px-2 py-1 text-xs">
+                      <div className="actions-cell">
+                        <button disabled={!!busy} onClick={() => act(s.subjectId, "RETURN")} className="btn btn-ghost btn-sm">
                           Return
                         </button>
-                        <button disabled={!!busy} onClick={() => act(s.subjectId, "APPROVE")} className="rounded bg-navy px-2 py-1 text-xs text-white">
+                        <button disabled={!!busy} onClick={() => act(s.subjectId, "APPROVE")} className="btn btn-primary btn-sm">
                           Approve
                         </button>
                       </div>
@@ -140,31 +137,33 @@ export default function FormReviewClient({
         </table>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <h3 className="section-title">Students</h3>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
             <tr>
-              <th className="p-3">Student</th>
-              <th className="p-3">Average</th>
-              <th className="p-3">Position</th>
-              <th className="p-3">Comment</th>
+              <th>Student</th>
+              <th>Average</th>
+              <th>Position</th>
+              <th>Comment</th>
             </tr>
           </thead>
           <tbody>
             {overview.students.map((s) => (
-              <tr key={s.id} className="border-t align-top">
-                <td className="p-3 font-medium">{s.name}</td>
-                <td className="p-3">{s.average ?? "—"}</td>
-                <td className="p-3">{s.position ?? "—"}</td>
-                <td className="p-3">
+              <tr key={s.id}>
+                <td style={{ fontWeight: 600 }}>{s.name}</td>
+                <td>{s.average ?? "—"}</td>
+                <td>{s.position ?? "—"}</td>
+                <td>
                   <textarea
-                    className="w-full min-w-[220px] rounded border px-2 py-1 text-sm"
+                    className="field-input field-input-sm"
+                    style={{ width: "100%", minWidth: 220 }}
                     rows={2}
                     value={comments[s.id] ?? ""}
                     onChange={(e) => setComments((prev) => ({ ...prev, [s.id]: e.target.value }))}
                     onBlur={() => saveComment(s.id)}
                   />
-                  <a href={`/form-review/${s.id}?classArmId=${classArmId}&sessionId=${sessionId}&termId=${termId}`} className="mt-1 inline-block text-xs text-navy underline">
+                  <a href={`/form-review/${s.id}?classArmId=${classArmId}&sessionId=${sessionId}&termId=${termId}`} className="small" style={{ color: "var(--teal-soft)", display: "inline-block", marginTop: 4 }}>
                     Skills / Attendance / Fees →
                   </a>
                 </td>
@@ -174,13 +173,13 @@ export default function FormReviewClient({
         </table>
       </div>
 
-      <div className="mt-4">
+      <div style={{ marginTop: 18 }}>
         {canApproveClass ? (
-          <button disabled={!!busy} onClick={approveClass} className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-white">
+          <button disabled={!!busy} onClick={approveClass} className="btn btn-primary">
             Approve Class &amp; Send to Admin/Principal
           </button>
         ) : (
-          <span className="text-sm text-slate-500">{alreadyApproved ? "Class already approved." : "Approve every subject above before approving the class."}</span>
+          <span className="small muted">{alreadyApproved ? "Class already approved." : "Approve every subject above before approving the class."}</span>
         )}
       </div>
     </div>
@@ -189,9 +188,9 @@ export default function FormReviewClient({
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <div className="text-xl font-bold text-navy">{value}</div>
-      <div className="text-sm text-slate-500">{label}</div>
+    <div className="stat-card">
+      <div className="stat-value" style={{ fontSize: 20 }}>{value}</div>
+      <div className="stat-label">{label}</div>
     </div>
   );
 }

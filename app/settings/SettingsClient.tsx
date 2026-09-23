@@ -29,16 +29,12 @@ export default function SettingsClient(props: any) {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Settings</h1>
-      {error && <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <h1 style={{ marginBottom: 16 }}>Settings</h1>
+      {error && <div className="login-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-      <div className="mb-4 flex flex-wrap gap-1 border-b">
+      <div className="tab-bar">
         {TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`rounded-t px-3 py-2 text-sm ${tab === t ? "border-b-2 border-navy font-semibold text-navy" : "text-slate-500"}`}
-          >
+          <button key={t} onClick={() => setTab(t)} className={`tab-btn ${tab === t ? "active" : ""}`}>
             {t}
           </button>
         ))}
@@ -60,13 +56,13 @@ export default function SettingsClient(props: any) {
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-lg border bg-white p-4">{children}</div>;
+  return <div className="card">{children}</div>;
 }
 function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={"rounded border px-2 py-1 text-sm " + (props.className ?? "")} />;
+  return <input {...props} className={"field-input field-input-sm " + (props.className ?? "")} style={{ width: "auto", ...props.style }} />;
 }
 function Btn(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button {...props} className={"rounded bg-navy px-3 py-1.5 text-sm text-white " + (props.className ?? "")} />;
+  return <button {...props} className={"btn btn-primary btn-sm " + (props.className ?? "")} />;
 }
 
 // ---------------------------------------------------------------- School --

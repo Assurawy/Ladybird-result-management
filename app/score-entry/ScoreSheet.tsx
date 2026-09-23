@@ -103,53 +103,51 @@ export default function ScoreSheet({
     if (res.ok) setStatus("SUBMITTED");
   }
 
-  if (loading) return <p className="text-slate-500">Loading…</p>;
+  if (loading) return <p className="muted">Loading…</p>;
 
   const incompleteCount = rows.filter((r) => !r.isComplete).length;
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-bold">Score Entry</h1>
-        </div>
-        <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-medium">{status}</span>
+      <div className="page-header-row">
+        <h1>Score Entry</h1>
+        <span className={`status-badge status-${status.toLowerCase()}`}>{status}</span>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <select className="rounded-md border px-3 py-2 text-sm" onChange={(e) => switchPair(e.target.value)} defaultValue={`${subjectId}::${classArmId}`}>
+      <div className="filter-bar">
+        <select className="field-input field-input-sm" style={{ width: "auto" }} onChange={(e) => switchPair(e.target.value)} defaultValue={`${subjectId}::${classArmId}`}>
           {assignments.map((a) => (
             <option key={`${a.subjectId}::${a.classArmId}`} value={`${a.subjectId}::${a.classArmId}`}>
               {a.subjectName} — {a.classArmName}
             </option>
           ))}
         </select>
-        <span className={`rounded-full px-3 py-1 text-xs font-medium ${incompleteCount > 0 ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+        <span className={`chip ${incompleteCount > 0 ? "chip-warn" : "chip-good"}`}>
           {incompleteCount > 0 ? `${incompleteCount} student(s) incomplete` : "All scores complete"}
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <div className="table-wrap score-table-wrap">
+        <table className="data-table">
+          <thead>
             <tr>
-              <th className="sticky left-0 bg-slate-100 p-3">Student</th>
+              <th className="sticky-col">Student</th>
               {components.map((c) => (
-                <th key={c.id} className="p-3">
-                  {c.name} <span className="text-slate-400">/{c.maxScore}</span>
+                <th key={c.id}>
+                  {c.name} <span className="muted">/{c.maxScore}</span>
                 </th>
               ))}
-              <th className="p-3">Total</th>
-              <th className="p-3">Grade</th>
-              <th className="p-3">Attendance</th>
+              <th>Total</th>
+              <th>Grade</th>
+              <th>Attendance</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.studentId} className="border-t">
-                <td className="sticky left-0 bg-white p-3 font-medium">{r.studentName}</td>
+              <tr key={r.studentId}>
+                <td className="sticky-col" style={{ fontWeight: 600 }}>{r.studentName}</td>
                 {components.map((c) => (
-                  <td key={c.id} className="p-2">
+                  <td key={c.id}>
                     <input
                       type="number"
                       min={0}
@@ -157,20 +155,20 @@ export default function ScoreSheet({
                       disabled={locked || !!r.attendanceState}
                       value={r.components[c.id] ?? ""}
                       onChange={(e) => updateCell(r.studentId, c.id, e.target.value)}
-                      className="w-16 rounded border px-2 py-1"
+                      className="score-input"
                     />
                   </td>
                 ))}
-                <td className="p-3 font-semibold">
-                  {r.attendanceState ? <span className="rounded bg-amber-100 px-2 py-1 text-xs">{r.attendanceState}</span> : r.isComplete ? r.total : <span className="text-slate-400">incomplete</span>}
+                <td style={{ fontWeight: 700 }}>
+                  {r.attendanceState ? <span className="chip chip-warn">{r.attendanceState}</span> : r.isComplete ? r.total : <span className="muted">incomplete</span>}
                 </td>
-                <td className="p-3">{r.grade}</td>
-                <td className="p-3">
+                <td>{r.grade}</td>
+                <td>
                   <select
                     disabled={locked}
                     value={r.attendanceState ?? ""}
                     onChange={(e) => updateAttendance(r.studentId, e.target.value)}
-                    className="rounded border px-2 py-1"
+                    className="field-input field-input-sm"
                   >
                     <option value="">Present</option>
                     <option value="ABSENT">Absent</option>
@@ -183,12 +181,12 @@ export default function ScoreSheet({
         </table>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-sm text-slate-500">{saveIndicator || "All changes saved"}</span>
+      <div className="card-footer" style={{ background: "transparent", boxShadow: "none", border: "none", padding: "14px 0 0" }}>
+        <span className="small muted">{saveIndicator || "All changes saved"}</span>
         {locked ? (
-          <span className="rounded bg-slate-200 px-3 py-1 text-sm">Locked for editing — status: {status}</span>
+          <span className="chip">Locked for editing — status: {status}</span>
         ) : (
-          <button onClick={submit} className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-white">
+          <button onClick={submit} className="btn btn-primary">
             Submit to Form Teacher
           </button>
         )}

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canChangeSettings } from "@/lib/permissions";
 import AppShell from "@/components/AppShell";
 import SettingsClient from "./SettingsClient";
-import { REPORT_STYLES } from "@/lib/report-styles";
+import { REPORT_STYLES } from "@/app/api/settings/report-templates/route";
 
 export default async function SettingsPage() {
   const session = await getSession();

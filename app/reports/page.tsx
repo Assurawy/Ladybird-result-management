@@ -14,7 +14,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: { cl
   if (!school?.currentSessionId || !school?.currentTermId) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">No active session/term is set yet.</p>
+        <p className="muted">No active session/term is set yet.</p>
       </AppShell>
     );
   }
@@ -29,7 +29,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: { cl
   if (accessibleClassArms.length === 0) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">No accessible class.</p>
+        <p className="muted">No accessible class.</p>
       </AppShell>
     );
   }

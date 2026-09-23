@@ -15,7 +15,7 @@ export default async function ApprovalsPage() {
   if (!school?.currentSessionId || !school?.currentTermId) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">No active session/term is set yet.</p>
+        <p className="muted">No active session/term is set yet.</p>
       </AppShell>
     );
   }

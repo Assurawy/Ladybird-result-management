@@ -13,28 +13,28 @@ export default async function AuditPage() {
 
   return (
     <AppShell user={session}>
-      <h1 className="mb-4 text-2xl font-bold">Audit Log</h1>
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <h1 style={{ marginBottom: 16 }}>Audit Log</h1>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
             <tr>
-              <th className="p-3">When</th>
-              <th className="p-3">User</th>
-              <th className="p-3">Role</th>
-              <th className="p-3">Action</th>
-              <th className="p-3">Details</th>
+              <th>When</th>
+              <th>User</th>
+              <th>Role</th>
+              <th>Action</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
             {logs.map((l) => (
-              <tr key={l.id} className="border-t">
-                <td className="whitespace-nowrap p-3 text-xs text-slate-500">{l.createdAt.toLocaleString()}</td>
-                <td className="p-3">{l.userName}</td>
-                <td className="p-3">{l.role}</td>
-                <td className="p-3">
-                  <span className="rounded-full bg-slate-200 px-2 py-1 text-xs">{l.action}</span>
+              <tr key={l.id}>
+                <td className="small muted" style={{ whiteSpace: "nowrap" }}>{l.createdAt.toLocaleString()}</td>
+                <td>{l.userName}</td>
+                <td>{l.role}</td>
+                <td>
+                  <span className="chip">{l.action}</span>
                 </td>
-                <td className="p-3 text-xs text-slate-600">{l.details}</td>
+                <td className="small muted">{l.details}</td>
               </tr>
             ))}
           </tbody>

@@ -72,36 +72,36 @@ export default function TeachersClient({
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Teachers &amp; Assignments</h1>
-      {error && <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <h1 style={{ marginBottom: 16 }}>Teachers &amp; Assignments</h1>
+      {error && <div className="login-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-      <div className="mb-6 rounded-lg border bg-white p-4">
-        <h2 className="mb-3 font-semibold">Subject Assignment</h2>
+      <div className="card">
+        <h3 style={{ marginBottom: 10 }}>Subject Assignment</h3>
         <div className="flex flex-wrap items-end gap-2">
           <Select label="Teacher" value={teacherId} onChange={setTeacherId} options={teachers} />
           <Select label="Subject" value={subjectId} onChange={setSubjectId} options={subjects} />
           <Select label="Class" value={classArmId} onChange={setClassArmId} options={classArms} />
-          <button onClick={assign} className="rounded bg-navy px-3 py-2 text-sm text-white">
+          <button onClick={assign} className="btn btn-primary btn-sm">
             Assign
           </button>
         </div>
-        <table className="mt-4 w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+        <table className="data-table">
+          <thead className="">
             <tr>
-              <th className="p-2">Teacher</th>
-              <th className="p-2">Subject</th>
-              <th className="p-2">Class</th>
-              <th className="p-2"></th>
+              <th >Teacher</th>
+              <th >Subject</th>
+              <th >Class</th>
+              <th ></th>
             </tr>
           </thead>
           <tbody>
             {assignments.map((a) => (
-              <tr key={a.id} className="border-t">
-                <td className="p-2">{a.teacherName}</td>
-                <td className="p-2">{a.subjectName}</td>
-                <td className="p-2">{a.classArmName}</td>
-                <td className="p-2">
-                  <button onClick={() => removeAssignment(a.id)} className="text-xs text-red-600">
+              <tr key={a.id}>
+                <td >{a.teacherName}</td>
+                <td >{a.subjectName}</td>
+                <td >{a.classArmName}</td>
+                <td >
+                  <button onClick={() => removeAssignment(a.id)} className="btn btn-danger btn-sm">
                     Remove
                   </button>
                 </td>
@@ -111,30 +111,30 @@ export default function TeachersClient({
         </table>
       </div>
 
-      <div className="rounded-lg border bg-white p-4">
-        <h2 className="mb-3 font-semibold">Form Teacher Assignment</h2>
+      <div className="card">
+        <h3 style={{ marginBottom: 10 }}>Form Teacher Assignment</h3>
         <div className="flex flex-wrap items-end gap-2">
           <Select label="Teacher" value={ftTeacherId} onChange={setFtTeacherId} options={teachers} />
           <Select label="Class" value={ftClassArmId} onChange={setFtClassArmId} options={classArms} />
-          <button onClick={assignFormTeacher} className="rounded bg-navy px-3 py-2 text-sm text-white">
+          <button onClick={assignFormTeacher} className="btn btn-primary btn-sm">
             Assign
           </button>
         </div>
-        <table className="mt-4 w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+        <table className="data-table">
+          <thead className="">
             <tr>
-              <th className="p-2">Teacher</th>
-              <th className="p-2">Class</th>
-              <th className="p-2"></th>
+              <th >Teacher</th>
+              <th >Class</th>
+              <th ></th>
             </tr>
           </thead>
           <tbody>
             {formAssignments.map((a) => (
-              <tr key={a.id} className="border-t">
-                <td className="p-2">{a.teacherName}</td>
-                <td className="p-2">{a.classArmName}</td>
-                <td className="p-2">
-                  <button onClick={() => removeFormAssignment(a.id)} className="text-xs text-red-600">
+              <tr key={a.id}>
+                <td >{a.teacherName}</td>
+                <td >{a.classArmName}</td>
+                <td >
+                  <button onClick={() => removeFormAssignment(a.id)} className="btn btn-danger btn-sm">
                     Remove
                   </button>
                 </td>
@@ -150,8 +150,8 @@ export default function TeachersClient({
 function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: Ref[] }) {
   return (
     <label className="text-sm">
-      <span className="mb-1 block text-slate-500">{label}</span>
-      <select className="rounded border px-2 py-2" value={value} onChange={(e) => onChange(e.target.value)}>
+      <span className="field-label">{label}</span>
+      <select className="field-input field-input-sm" value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((o) => (
           <option key={o.id} value={o.id}>
             {o.name}

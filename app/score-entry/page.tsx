@@ -17,7 +17,7 @@ export default async function ScoreEntryPage({
   if (!school?.currentSessionId || !school?.currentTermId) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">No active session/term is set yet — ask an Admin to configure one in Settings.</p>
+        <p className="muted">No active session/term is set yet — ask an Admin to configure one in Settings.</p>
       </AppShell>
     );
   }
@@ -32,7 +32,7 @@ export default async function ScoreEntryPage({
   if (assignments.length === 0) {
     return (
       <AppShell user={session}>
-        <p className="text-slate-500">No subject assignments for this term.</p>
+        <p className="muted">No subject assignments for this term.</p>
       </AppShell>
     );
   }
