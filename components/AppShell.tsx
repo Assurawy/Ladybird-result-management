@@ -49,7 +49,8 @@ export default function AppShell({ user, children }: { user: SessionUser; childr
 
   const items = NAV_ITEMS.filter((i) => !i.wholeOnly || whole);
   const primaryItems = items.filter((i) => i.primary).slice(0, 5);
-  const moreItems = items.filter((i) => !primaryItems.includes(i));
+  const primaryHrefs = new Set(primaryItems.map((i) => i.href));
+  const moreItems = items.filter((i) => !primaryHrefs.has(i.href));
 
   const initials = user.name
     .split(" ")
