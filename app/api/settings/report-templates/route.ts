@@ -3,11 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { canChangeSettings } from "@/lib/permissions";
-
-export const REPORT_STYLES = [
-  "classic-navy", "modern-teal", "royal-purple", "crimson-gold", "corporate-slate",
-  "elegant-serif", "sunburst-orange", "forest-green", "minimal-mono", "double-frame-formal",
-] as const;
+import { REPORT_STYLES } from "@/lib/report-styles";
 
 const schema = z.object({
   name: z.string().min(1),
